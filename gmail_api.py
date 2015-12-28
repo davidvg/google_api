@@ -17,6 +17,9 @@ from apiclient.http import BatchHttpRequest as batchRequest
 import oauth2client
 from oauth2client import client
 from oauth2client import tools
+# Modules for reencoding the message
+import base64
+import email
 
 try:
     import argparse
@@ -168,7 +171,7 @@ def get_message (service, msg_id, format='minimal'):
     Arguments:
         - a service, created using make_service()
         - a message id, as returned by messages.list() in the api
-        - a message format (full, raw, minimal)
+        - a message format (full, raw, minimal, metadata)
     
     Returns:
         - a message
@@ -249,7 +252,45 @@ def get_labels (message):
     """
     return message['labelIds']
 ################################################################################
+def decode_message (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats. 'minimal' and 'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
 
+    Extract the body of the message.
+        For 'raw' format it is in message['raw']
+        For 'full' format it is nested in: message --> payload --> body --> data
+        For 'metadata' and 'minimal' format, there is no body.
+    """
+    try:
+        # Try 'raw' mode
+        raw = message['raw'] # Unicode object
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        mime = email.message_from_string (raw_str)
+        # Re-encode data; returns a str
+        text = unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+    except:
+        try:
+            # Try 'full' mode
+            # Get the raw data
+            payload = message['payload']
+            body = payload['body']
+            raw = body['data'] # Unicode object
+            # Decode body; returns a str
+            text = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        except:
+            # Minimal or Metadata format, no body data.
+            print ("Error: no body in message. Try 'full' or 'raw' formats.")
+            return
+            
+    return text
 ################################################################################
 
 ################################################################################

@@ -1,5 +1,10 @@
-client_secret.json
 *~
 *pyc
 log.html
+
+# Credentials file
+client_secret.json
+
+# Some test files
 test_gm.py
+gmailTest.py
