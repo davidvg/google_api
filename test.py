@@ -12,9 +12,9 @@ msg_ids = gmail.get_message_ids_from_labels (service, labels)
 #messages = gmail.get_batch_messages (service, msg_ids)
 
 # Retrieve one message
-msg_id = msg_ids [10]
-msg_raw = gmail.get_message (service, msg_id, 'raw')
-msg_full = gmail.get_message (service, msg_id, 'full')
+#msg_id = msg_ids [2]
+msg_id = {u'id': u'151d006d3de346f7', u'threadId': u'151d006d3de346f7'}
 
-text_f = gmail.decode_message (msg_full)
-text_r = gmail.decode_message (msg_raw)
+message = gmail.get_message (service, msg_id, 'raw')
+
+body = gmail.decode_message (message)
