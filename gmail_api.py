@@ -37,10 +37,10 @@ def get_credentials():
     the OAuth2 flow is completed to obtain the new credentials.
     
     Arguments:
-        None
+        - None
 
     Returns:
-        credentials, an instance of OAuth2Credentials.
+        - credentials, an instance of OAuth2Credentials.
     """
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
@@ -64,21 +64,22 @@ def get_credentials():
 def make_service (credentials):
     """
     Arguments:
-        credentials, an instance of OAuth2Credentials.
+        - credentials, an instance of OAuth2Credentials. Generated using
+          function get_cedentials()
     Returns:
-        a service for Gmail v1 [googleapiclient.discovery.Resource]
+        - a service for Gmail v1 [googleapiclient.discovery.Resource]
     """
     http = credentials.authorize (httplib2.Http())
     return discovery.build ('gmail', 'v1', http=http)
 ################################################################################
-def get_message_ids_from_query (service, query_="label:piso"):
+def get_message_ids_from_query (service, query):
     """
     Arguments:
-        a service
-        a search query, as in the Gmail search.
+        - a service, created using make_service()
+        - a search query, as in the Gmail search.
     
     Returns:
-        a list with the 'id' and 'threadId' values for every message according to the search query.
+        - a list with the 'id' and 'threadId' values for every message according to the search query.
         
     Takes into account all the possible pages with results, via 'nextPageToken'
     The result comprises every message, independently of the number of threads,
@@ -87,7 +88,7 @@ def get_message_ids_from_query (service, query_="label:piso"):
     # Init result to empty list
     messages = []
     # Get the whole list of message ids -first page
-    response = service.users().messages().list (userId='me', q=query_).execute()
+    response = service.users().messages().list (userId='me', q=query).execute()
     # If there are messages in the first result page:
     if 'messages' in response:
         # Add the messages in the first page
@@ -97,7 +98,7 @@ def get_message_ids_from_query (service, query_="label:piso"):
         page_token = response['nextPageToken']
         # Get the response for this page
         response = service.users().messages()\
-                   .list(userId='me', q=query_, pageToken=page_token).execute()
+                   .list(userId='me', q=query, pageToken=page_token).execute()
         # Add the messages in this page
         messages.extend(response['messages'])
     return messages
@@ -107,12 +108,12 @@ def get_batch_messages (service, msg_ids, format_='minimal'):
     Gets the messages for every id in the msg_ids array, with format='format_'
     
     Arguments:
-        a service
-        a list of ids and threadIds as returned by get_message_ids_from_query
-        a string with the format of the message in the response
+        - a service, created using make_service()
+        - a list of ids and threadIds as returned by get_message_ids_from_query
+        - a string with the format of the message in the response
         
     Returns:
-        a list of messages, as returned by GET.
+        - a list of messages, as returned by GET.
     
     IMPORTANT: Batch requests are limited to 1000 calls per request.
     

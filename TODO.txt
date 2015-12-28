@@ -1,4 +1,5 @@
-[ ] Add arguments description in function headers.
+[ ] Create function to extract a message's labels.
 [ ] Create function that gets a list of messages using labelIds.
 [ ] Create function for changing the SCOPE of the credentials, or define multiple credentials, with different access permissions (for deleting or marking as read, for instance)
+[X] Add arguments description in function headers.
 
