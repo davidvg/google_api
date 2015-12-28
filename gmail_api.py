@@ -115,7 +115,11 @@ def get_message (service, msg_id, format='minimal'):
     Returns:
         - a message
     """
-    pass
+    # Fetch the message with id = msg_id['id']
+    message = service.users().messages().get(userId='me',\
+                                             id=msg_id['id'],\
+                                             format=format).execute()
+    return message
 ################################################################################
 def get_batch_messages (service, msg_ids, format_='minimal'):
     """
