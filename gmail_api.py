@@ -72,6 +72,39 @@ def make_service (credentials):
     http = credentials.authorize (httplib2.Http())
     return discovery.build ('gmail', 'v1', http=http)
 ################################################################################
+def get_message_ids_from_labels (service, labels):
+    """
+    Arguments:
+        - a service, created using make_service()
+        - a list of existing label identifiers
+    
+    Returns:
+        - a list with the 'id' and 'threadId' values for every message according to the search query.
+        
+    Takes into account all the possible pages with results, via 'nextPageToken'
+    The result comprises every message, independently of the number of threads,
+    i.e. it may return 180 messages, being 155 threads (real test case)
+    """
+    # Init result to empty list
+    messages = []
+    # Get the whole list of message ids -first page
+    response = service.users().messages().list (userId='me',\
+                                                labelIds=labels).execute()
+    # If there are messages in the first result page:
+    if 'messages' in response:
+        # Add the messages in the first page
+        messages.extend(response['messages'])
+    # While there are result pages left...
+    while 'nextPageToken' in response:
+        page_token = response['nextPageToken']
+        # Get the response for this page
+        response = service.users().messages()\
+                   .list(userId='me', labelIds=labels, pageToken=page_token)\
+                   .execute()
+        # Add the messages in this page
+        messages.extend(response['messages'])
+    return messages
+################################################################################
 def get_message_ids_from_query (service, query):
     """
     Arguments:
@@ -102,6 +135,31 @@ def get_message_ids_from_query (service, query):
         # Add the messages in this page
         messages.extend(response['messages'])
     return messages
+################################################################################
+"""
+MESSAGES
+--------
+    The structure of a message depends on its format:
+    
+    *** full ***
+    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
+                payload, sizeEstimate
+        - payload:  mimeType, filename, headers, body, parts
+            - headers:  contains all the headers data: (list)
+                - Date, From, to, Subject...
+            - parts:    mimeType, headers, parts, body, filename
+                - parts:    mimeType, headers, body, partId, filename
+                    - body:     data, size
+
+    *** raw ***
+    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
+                sizeEstimate, raw
+        - raw:      the raw, undecoded message (str)
+    
+    *** Minimal ***
+    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
+                sizeEstimate
+"""
 ################################################################################
 def get_message (service, msg_id, format='minimal'):
     """
@@ -197,28 +255,7 @@ def get_labels (message):
 ################################################################################
 
 ################################################################################
-"""
-    The structure of the response depends on the format:
-    
-    *** full ***
-    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
-                payload, sizeEstimate
-        - payload:  mimeType, filename, headers, body, parts
-            - headers:  contains all the headers data: (list)
-                - Date, From, to, Subject...
-            - parts:    mimeType, headers, parts, body, filename
-                - parts:    mimeType, headers, body, partId, filename
-                    - body:     data, size
 
-    *** raw ***
-    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
-                sizeEstimate, raw
-        - raw:      the raw, undecoded message (str)
-    
-    *** Minimal ***
-    - Contents: id, threadId, labelIds, snippet, historyId, internalDate,
-                sizeEstimate
-"""
 ################################################################################
 def main():
     """
