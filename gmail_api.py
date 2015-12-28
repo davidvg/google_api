@@ -103,6 +103,20 @@ def get_message_ids_from_query (service, query):
         messages.extend(response['messages'])
     return messages
 ################################################################################
+def get_message (service, msg_id, format='minimal'):
+    """
+    Gets a single message, knowing its id.
+    
+    Arguments:
+        - a service, created using make_service()
+        - a message id, as returned by messages.list() in the api
+        - a message format (full, raw, minimal)
+    
+    Returns:
+        - a message
+    """
+    pass
+################################################################################
 def get_batch_messages (service, msg_ids, format_='minimal'):
     """
     Gets the messages for every id in the msg_ids array, with format='format_'
@@ -161,6 +175,24 @@ def get_batch_messages (service, msg_ids, format_='minimal'):
         
     return messages
 ################################################################################
+def get_labels (message):
+    """
+    Extracts the label from a message.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a list of labels
+    """
+    return message['labelIds']
+################################################################################
+
+################################################################################
+
+################################################################################
+
+################################################################################
 """
     The structure of the response depends on the format:
     
@@ -185,6 +217,10 @@ def get_batch_messages (service, msg_ids, format_='minimal'):
 """
 ################################################################################
 def main():
+    """
+    Example of the gmail_api module.
+    Requires a 'client_secret.json' file (see header of this file)
+    """
     pass
 ################################################################################
 if __name__ == '__main__':
