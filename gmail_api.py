@@ -292,11 +292,60 @@ def decode_message (message):
             
     return text
 ################################################################################
+def get_message_headers (messages):
+    """
+    Returns the message headers.
+    Won't work for message format 'raw' or 'minimal'
+    
+    Arguments:
+        - a list of messages, as returned by get_batch_messages()
+    
+    Returns:
+        - a list with the headers for the input messages
+    """
+    try:
+        # Extract the payloads
+        payloads = [msg['payload'] for msg in messages]
+        # Extract and return the headers
+        return [pl['headers'] for pl in payloads]
+    except:
+        # There are no headers in the messages
+        print ('>>> Error! No headers in the messages.')
+        print (">>> Messages must be in 'full' or 'metadata' formats.")
+        return
+################################################################################
+def get_subject_ix (headers):
+    """
+    Tries to guess the location of the message's subject in the header.
+    
+    Arguments:
+        - a list of headers (for simplicity)
+    
+    Returns:
+        - an int, corresponding to the index of the dict in the header containing the subject.
+    """
+    # If only one header is passed, its first element is a dictionary
+    # If the first element is a list, then its a list of lists (headers)
+    if type(headers[0]) == list:
+        header = headers[0]
+    else: # A single header was passed
+        header = headers
+    try:
+        for n in range(len(header)):
+            if header[n]['name'] == 'Subject':
+                return n
+    except:
+        print (">>> Error!")
+################################################################################
+
+################################################################################
 
 ################################################################################
 
 ################################################################################
 
+
+################################################################################
 ################################################################################
 def main():
     """
