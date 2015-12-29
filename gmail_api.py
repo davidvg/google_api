@@ -292,7 +292,7 @@ def decode_message (message):
             
     return text
 ################################################################################
-def get_message_headers (messages):
+def get_headers (messages):
     """
     Returns the message headers.
     Won't work for message format 'raw' or 'minimal'
@@ -303,23 +303,32 @@ def get_message_headers (messages):
     Returns:
         - a list with the headers for the input messages
     """
-    try:
-        # Extract the payloads
-        payloads = [msg['payload'] for msg in messages]
-        # Extract and return the headers
-        return [pl['headers'] for pl in payloads]
-    except:
-        # There are no headers in the messages
-        print ('>>> Error! No headers in the messages.')
-        print (">>> Messages must be in 'full' or 'metadata' formats.")
-        return
+    if type(messages) == list: # a list of messages was passed
+        try:
+            # Extract the payloads
+            payloads = [msg['payload'] for msg in messages]
+            # Extract and return the headers
+            return [pl['headers'] for pl in payloads]
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+            return
+    else: # a single message was passed
+        try:
+            payload = messages['payload']
+            return [payload['headers']] # Return list for consistency
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
 ################################################################################
 def get_subject_ix (headers):
     """
     Tries to guess the location of the message's subject in the header.
     
     Arguments:
-        - a list of headers (for simplicity)
+        - a list of headers (or a single header)
     
     Returns:
         - an int, corresponding to the index of the dict in the header containing the subject.
@@ -337,7 +346,25 @@ def get_subject_ix (headers):
     except:
         print (">>> Error!")
 ################################################################################
-
+def get_subjects (headers):
+    """
+    Arguments:
+        - a list of headers (or a single header)
+    
+    Returns:
+        - a list with the subjects for every message    
+    """
+    # Get the Subject location
+    ix = get_subject_ix (headers)
+    #
+    if type(headers[0]) == list:
+        header = headers[0]
+    else: # A single header was passed
+        header = headers
+    try:
+        return [h[ix]['value'] for h in headers]
+    except:
+        pass
 ################################################################################
 
 ################################################################################
