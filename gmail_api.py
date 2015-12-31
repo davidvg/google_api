@@ -287,10 +287,50 @@ def decode_message (message):
             text = base64.urlsafe_b64decode (raw.encode('ASCII'))
         except:
             # Minimal or Metadata format, no body data.
-            print ("Error: no body in message. Try 'full' or 'raw' formats.")
+            print ("decode_message() >>> Error: no body in message. Try 'full' or 'raw' formats.")
             return
             
     return text
+################################################################################
+def decode_message_multipart (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats for multipart
+    messages. 'minimal' and'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
+
+    Extract the body of the message.
+    For both 'full' and 'raw' formats, the body is in:
+        payload --> parts[0] --> parts[0] --> body --> data
+
+    For 'metadata' and 'minimal' format there is no body.
+    """
+    # Very very ugly implementation. 
+    # Needs much more work.
+    try:
+        raw = message['raw']
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        try:
+            mime = email.message_from_string (raw_str)
+            # Re-encode data; returns a str
+            return unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+        except:
+            return raw_str
+    except:
+        try:
+            payload = message['payload']
+            body = payload['parts'][0]['parts'][0]['body']
+            # Decode body; returns a str
+            return base64.urlsafe_b64decode (body['data'].encode('ASCII'))
+        except:
+            print ("decode_message_multipart() >>> Error!")
+    
 ################################################################################
 def get_headers (messages):
     """
@@ -364,7 +404,7 @@ def get_subjects (headers):
     try:
         return [h[ix]['value'] for h in headers]
     except:
-        pass
+        print (">>> Error - Can't get the subject.")
 ################################################################################
 
 ################################################################################
