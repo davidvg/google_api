@@ -406,7 +406,29 @@ def get_subjects (headers):
     except:
         print (">>> Error - Can't get the subject.")
 ################################################################################
-
+def get_received_date (message):
+    """
+    Gets the date from the headers and returns it in yyyy-mm-dd format.
+    
+    Arguments:
+        - a message.
+    Returns:
+        - a string with the date in yyyy-mm-dd format.
+    """
+    # Dictionary for translating months names to numbers
+    month = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,\
+             'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+    
+    header_ = get_headers (message)
+    date_ = header_[0][1]['value'].split(';')[1]
+    date_ = date_.split()
+    
+    y = int (date_[3])
+    m = int (month[date_[2]])
+    d = int (date_[1])
+    
+#    return y + '-' + m + '-' + d
+    return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
 ################################################################################
 
 ################################################################################
