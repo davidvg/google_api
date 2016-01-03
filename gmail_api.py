@@ -332,6 +332,15 @@ def decode_message_multipart (message):
             print ("decode_message_multipart() >>> Error!")
     
 ################################################################################
+def decode (message):
+    """
+    
+    """
+    try:
+        return decode_message (message)
+    except:
+        return decode_message_multipart (message)
+################################################################################
 def get_headers (messages):
     """
     Returns the message headers.
