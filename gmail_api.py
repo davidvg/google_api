@@ -17,6 +17,9 @@ from apiclient.http import BatchHttpRequest as batchRequest
 import oauth2client
 from oauth2client import client
 from oauth2client import tools
+# Modules for reencoding the message
+import base64
+import email
 
 try:
     import argparse
@@ -168,7 +171,7 @@ def get_message (service, msg_id, format='minimal'):
     Arguments:
         - a service, created using make_service()
         - a message id, as returned by messages.list() in the api
-        - a message format (full, raw, minimal)
+        - a message format (full, raw, minimal, metadata)
     
     Returns:
         - a message
@@ -249,7 +252,153 @@ def get_labels (message):
     """
     return message['labelIds']
 ################################################################################
+def decode_message (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats. 'minimal' and 'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
 
+    Extract the body of the message.
+        For 'raw' format it is in message['raw']
+        For 'full' format it is nested in: message --> payload --> body --> data
+        For 'metadata' and 'minimal' format, there is no body.
+    """
+    try:
+        # Try 'raw' mode
+        raw = message['raw'] # Unicode object
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        mime = email.message_from_string (raw_str)
+        # Re-encode data; returns a str
+        text = unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+    except:
+        try:
+            # Try 'full' mode
+            # Get the raw data
+            payload = message['payload']
+            body = payload['body']
+            raw = body['data'] # Unicode object
+            # Decode body; returns a str
+            text = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        except:
+            # Minimal or Metadata format, no body data.
+            print ("decode_message() >>> Error: no body in message. Try 'full' or 'raw' formats.")
+            return
+            
+    return text
+################################################################################
+def decode_message_multipart (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats for multipart
+    messages. 'minimal' and'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
+
+    Extract the body of the message.
+    For both 'full' and 'raw' formats, the body is in:
+        payload --> parts[0] --> parts[0] --> body --> data
+
+    For 'metadata' and 'minimal' format there is no body.
+    """
+    # Very very ugly implementation. 
+    # Needs much more work.
+    try:
+        raw = message['raw']
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        try:
+            mime = email.message_from_string (raw_str)
+            # Re-encode data; returns a str
+            return unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+        except:
+            return raw_str
+    except:
+        try:
+            payload = message['payload']
+            body = payload['parts'][0]['parts'][0]['body']
+            # Decode body; returns a str
+            return base64.urlsafe_b64decode (body['data'].encode('ASCII'))
+        except:
+            print ("decode_message_multipart() >>> Error!")
+    
+################################################################################
+def decode (message):
+    """
+    
+    """
+    try:
+        return decode_message (message)
+    except:
+        return decode_message_multipart (message)
+################################################################################
+def get_headers (messages):
+    """
+    Returns the message headers.
+    Won't work for message format 'raw' or 'minimal'
+    
+    Arguments:
+        - a list of messages, as returned by get_batch_messages()
+    
+    Returns:
+        - a list with the headers for the input messages
+    """
+    if type(messages) == list: # a list of messages was passed
+        try:
+            # Extract the payloads
+            payloads = [msg['payload'] for msg in messages]
+            # Extract and return the headers
+            return [pl['headers'] for pl in payloads]
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+            return
+    else: # a single message was passed
+        try:
+            payload = messages['payload']
+            return [payload['headers']] # Return list for consistency
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+################################################################################
+def get_subjects (headers):
+    """
+    Arguments:
+        - a list of headers (or a single header)
+    
+    Returns:
+        - a list with the subjects for every message    
+    """
+    # Deal with single / multiple headers passed as input
+    if type(headers[0]) == list:
+        header = headers[0]
+    else: # A single header was passed
+        header = headers
+
+    # Get the Subject location
+    try:
+        for n in range(len(header)):
+            if header[n]['name'] == 'Subject':
+                ix = n
+    except:
+        print ("gmail_api.get_subjects() >>> Error: can't get subject ix.")
+
+    # Extract the subject
+    try:
+        return [h[ix]['value'] for h in headers]
+    except:
+        print ("gmail_api.get_subjects() >>> Error - Can't get the subject.")
 ################################################################################
 def get_received_date (message):
     """
@@ -278,6 +427,8 @@ def get_received_date (message):
 
 ################################################################################
 
+
+################################################################################
 ################################################################################
 def main():
     """
