@@ -372,29 +372,6 @@ def get_headers (messages):
             print ('>>> Error! No headers in the messages.')
             print (">>> Messages must be in 'full' or 'metadata' formats.")
 ################################################################################
-def get_subject_ix (headers):
-    """
-    Tries to guess the location of the message's subject in the header.
-    
-    Arguments:
-        - a list of headers (or a single header)
-    
-    Returns:
-        - an int, corresponding to the index of the dict in the header containing the subject.
-    """
-    # If only one header is passed, its first element is a dictionary
-    # If the first element is a list, then its a list of lists (headers)
-    if type(headers[0]) == list:
-        header = headers[0]
-    else: # A single header was passed
-        header = headers
-    try:
-        for n in range(len(header)):
-            if header[n]['name'] == 'Subject':
-                return n
-    except:
-        print (">>> Error!")
-################################################################################
 def get_subjects (headers):
     """
     Arguments:
@@ -403,17 +380,25 @@ def get_subjects (headers):
     Returns:
         - a list with the subjects for every message    
     """
-    # Get the Subject location
-    ix = get_subject_ix (headers)
-    #
+    # Deal with single / multiple headers passed as input
     if type(headers[0]) == list:
         header = headers[0]
     else: # A single header was passed
         header = headers
+
+    # Get the Subject location
+    try:
+        for n in range(len(header)):
+            if header[n]['name'] == 'Subject':
+                ix = n
+    except:
+        print ("gmail_api.get_subjects() >>> Error: can't get subject ix.")
+
+    # Extract the subject
     try:
         return [h[ix]['value'] for h in headers]
     except:
-        print (">>> Error - Can't get the subject.")
+        print ("gmail_api.get_subjects() >>> Error - Can't get the subject.")
 ################################################################################
 def get_received_date (message):
     """
