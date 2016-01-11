@@ -28,12 +28,13 @@ except ImportError:
     flags = None
 
 # Default values
-SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
+#SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
+#SCOPES ) 'https://www.googleapis.com/auth/gmail.modify'
 CLIENT_SECRET_FILE = 'client_secret.json'
 #APPLICATION_NAME = 'Gmail API for Python'
 
 ################################################################################
-def get_credentials():
+def get_credentials(scope):
     """Gets valid user credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
@@ -55,7 +56,7 @@ def get_credentials():
     store = oauth2client.file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, scope)
         #flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
@@ -427,7 +428,12 @@ def get_received_date (message):
 
 ################################################################################
 
-
+################################################################################
+def revoke_auth ():
+    """
+    Deletes the authorization json file in ~/.credentials.
+    """
+    tools.client.os.remove('/home/david/.credentials/gmail_api-python.json')
 ################################################################################
 ################################################################################
 def main():
