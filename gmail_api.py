@@ -425,6 +425,17 @@ def get_received_date (message):
 #    return y + '-' + m + '-' + d
     return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
 ################################################################################
+def is_unread (msg):
+    """
+    Checks if a message is UNREAD.
+    
+    Arguments:
+        - a message
+    Returns:
+        - a boolean (True for UNREAD message)
+    """
+    return 'UNREAD' in get_labels(msg)
+################################################################################
 def mark_as_read (service, msg_ids):
     """
     Marks as read a list of messages.
