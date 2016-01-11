@@ -425,6 +425,30 @@ def get_received_date (message):
 #    return y + '-' + m + '-' + d
     return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
 ################################################################################
+def mark_as_read (service, msg_ids):
+    """
+    Marks as read a list of messages.
+    
+    Arguments:
+        - A service
+        - A single or list of ids dicts, as in a gmail message
+    Returns:
+        - Nothing
+    """
+    def markRead (msgId):
+        service.users().messages().modify(userId='me',\
+                                          id=msgId['id'],\
+                                          body={'removeLabelIds': ['UNREAD'],\
+                                                'addLabelIds': []\
+                                               })\
+                                  .execute()
+    #--------------------------
+    if type(msg_ids) == list:
+        for msg_id in msg_ids:
+            markRead(msg_id)
+    elif type(msg_ids) == dict:
+        markRead (msg_ids)
+
 
 ################################################################################
 
