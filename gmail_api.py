@@ -448,10 +448,40 @@ def mark_as_read (service, msg_ids):
             markRead(msg_id)
     elif type(msg_ids) == dict:
         markRead (msg_ids)
-
-
 ################################################################################
-
+def add_label (service, msg_ids, labels):
+    """
+    
+    """
+    def addLabels (msgId):
+        service.users().messages().modify(userId='me',\
+                                          id=msgId['id'],\
+                                          body={'removeLabelIds': [],\
+                                                'addLabelIds': labels\
+                                               })\
+                                  .execute()
+    #--------------------------
+    if type(msg_ids) == list:
+        for msg_id in msg_ids:
+            addLabels (msg_id)
+    elif type(msg_ids) == dict:
+        addLabels (msg_ids)    
+################################################################################
+def get_list_of_labels (service, print_=False):
+    """
+    
+    """
+    # Get the list of available labels
+    labels = service.users().labels().list(userId='me').execute()
+    # Extract the 'labels' field from the dict
+    labels = labels['labels']
+    
+    if print_:
+        print ('\nLABELS:\n')
+        for label in labels:
+            print (label['id'] + ' --> ' + label['name'])
+    
+    return labels
 ################################################################################
 def revoke_auth ():
     """
