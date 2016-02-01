@@ -460,23 +460,54 @@ def mark_as_read (service, msg_ids):
     elif type(msg_ids) == dict:
         markRead (msg_ids)
 ################################################################################
-def add_label (service, msg_ids, labels):
+#def add_labels (service, msg_id, labels):
+#    """
+#    Arguments:
+#        - A service
+#        - A message id (not a dict)
+#        - A list of labels to add
+#    Returns:
+#        - None
+#    """
+#    service.users().messages().modify(userId='me',\
+#                                      id=msg_id,\
+#                                      body={'removeLabelIds': [],\
+#                                            'addLabelIds': labels\
+#                                           })\
+#                              .execute()
+################################################################################
+#def remove_labels (service, msg_id, labels):
+#    """
+#        Arguments:
+#        - A service
+#        - A message id (not a dict)
+#        - A list of labels to remove
+#    Returns:
+#        - None
+#    """  
+#    service.users().messages().modify(userId='me',\
+#                                  id=msg_id,\
+#                                  body={'removeLabelIds': labels,\
+#                                        'addLabelIds': []\
+#                                       })\
+#                              .execute() 
+################################################################################
+def modify_labels (service, msg_id, add=[], remove=[]):
     """
+    Adds or removes labels from a message.
     
+    Arguments:
+        - A service
+        - A message id (dict)
+        - A list of labels to add
+        - A list of labels to remove
+    Returns:
+        - None
     """
-    def addLabels (msgId):
-        service.users().messages().modify(userId='me',\
-                                          id=msgId['id'],\
-                                          body={'removeLabelIds': [],\
-                                                'addLabelIds': labels\
-                                               })\
-                                  .execute()
-    #--------------------------
-    if type(msg_ids) == list:
-        for msg_id in msg_ids:
-            addLabels (msg_id)
-    elif type(msg_ids) == dict:
-        addLabels (msg_ids)    
+    service.users().messages().modify (userId='me', id=msg_id, \
+                                       body = {'addLabelIds': add,\
+                                               'removeLabelIds': remove })\
+                              .execute()
 ################################################################################
 def get_list_of_labels (service, print_=False):
     """
@@ -499,6 +530,13 @@ def revoke_auth ():
     Deletes the authorization json file in ~/.credentials.
     """
     tools.client.os.remove('/home/david/.credentials/gmail_api-python.json')
+################################################################################
+################################################################################
+################################################################################
+
+
+
+################################################################################
 ################################################################################
 ################################################################################
 def main():

@@ -6,5 +6,6 @@ log.html
 client_secret.json
 
 # Some test files
-test_gm.py
+/tests/**
 gmailTest.py
+
