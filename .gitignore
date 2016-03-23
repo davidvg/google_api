@@ -1,4 +1,3 @@
-client_secret.json
 *~
 *pyc
 log.html
@@ -6,3 +5,13 @@ log.html
 # Some test files
 test_gm.py
 gmailTest.py
+
+# Credentials file
+client_secret.json
+
+# Some test files
+/tests/**
+gmailTest.py
+
+# Vim's backup file
+*swp

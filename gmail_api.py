@@ -18,6 +18,10 @@ import oauth2client
 from oauth2client import client
 from oauth2client import tools
 
+# Modules for reencoding the message
+import base64
+import email
+
 try:
     import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -25,12 +29,13 @@ except ImportError:
     flags = None
 
 # Default values
-SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
+#SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
+#SCOPES ) 'https://www.googleapis.com/auth/gmail.modify'
 CLIENT_SECRET_FILE = 'client_secret.json'
 #APPLICATION_NAME = 'Gmail API for Python'
 
 ################################################################################
-def get_credentials():
+def get_credentials(scope):
     """Gets valid user credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
@@ -52,7 +57,7 @@ def get_credentials():
     store = oauth2client.file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, scope)
         #flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
@@ -168,7 +173,11 @@ def get_message (service, msg_id, format='minimal'):
     Arguments:
         - a service, created using make_service()
         - a message id, as returned by messages.list() in the api
+<<<<<<< HEAD
         - a message format (full, raw, minimal)
+=======
+        - a message format (full, raw, minimal, metadata)
+>>>>>>> develop
     
     Returns:
         - a message
@@ -249,12 +258,288 @@ def get_labels (message):
     """
     return message['labelIds']
 ################################################################################
+def decode_message (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats. 'minimal' and 'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
 
+    Extract the body of the message.
+        For 'raw' format it is in message['raw']
+        For 'full' format it is nested in: message --> payload --> body --> data
+        For 'metadata' and 'minimal' format, there is no body.
+    """
+    try:
+        # Try 'raw' mode
+        raw = message['raw'] # Unicode object
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        mime = email.message_from_string (raw_str)
+        # Re-encode data; returns a str
+        text = unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+    except:
+        try:
+            # Try 'full' mode
+            # Get the raw data
+            payload = message['payload']
+            body = payload['body']
+            raw = body['data'] # Unicode object
+            # Decode body; returns a str
+            text = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        except:
+            # Minimal or Metadata format, no body data.
+            print ("decode_message() >>> Error: no body in message. Try 'full' or 'raw' formats.")
+            return
+            
+    return text
+################################################################################
+def decode_message_multipart (message):
+    """
+    Decodes the body of the message for 'raw' and 'full' formats for multipart
+    messages. 'minimal' and'metadata' formats have no data body.
+    
+    Arguments:
+        - a message, as returned by get_message() or get_batch_messages()
+    
+    Returns:
+        - a string containing the html code for the message.
+
+    Extract the body of the message.
+    For both 'full' and 'raw' formats, the body is in:
+        payload --> parts[0] --> parts[0] --> body --> data
+
+    For 'metadata' and 'minimal' format there is no body.
+    """
+    # Very very ugly implementation. 
+    # Needs much more work.
+    try:
+        raw = message['raw']
+        # Decode body
+        raw_str = base64.urlsafe_b64decode (raw.encode('ASCII'))
+        try:
+            mime = email.message_from_string (raw_str)
+            # Re-encode data; returns a str
+            return unicode (mime.get_payload(decode=True),\
+               mime.get_content_charset(), 'ignore').encode('utf8', 'replace')
+        except:
+            return raw_str
+    except:
+        try:
+            payload = message['payload']
+            body = payload['parts'][0]['parts'][0]['body']
+            # Decode body; returns a str
+            return base64.urlsafe_b64decode (body['data'].encode('ASCII'))
+        except:
+            print ("decode_message_multipart() >>> Error!")
+    
+################################################################################
+def decode (message):
+    """
+    
+    """
+    try:
+        return decode_message (message)
+    except:
+        return decode_message_multipart (message)
+################################################################################
+def get_headers (messages):
+    """
+    Returns the message headers.
+    Won't work for message format 'raw' or 'minimal'
+    
+    Arguments:
+        - a list of messages, as returned by get_batch_messages()
+    
+    Returns:
+        - a list with the headers for the input messages
+    """
+    if type(messages) == list: # a list of messages was passed
+        try:
+            # Extract the payloads
+            payloads = [msg['payload'] for msg in messages]
+            # Extract and return the headers
+            return [pl['headers'] for pl in payloads]
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+            return
+    else: # a single message was passed
+        try:
+            payload = messages['payload']
+            return [payload['headers']] # Return list for consistency
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+################################################################################
+def get_subjects (headers):
+    """
+    Arguments:
+        - a list of headers (or a single header)
+    
+    Returns:
+        - a list with the subjects for every message    
+    """
+    # Deal with single / multiple headers passed as input
+    if type(headers[0]) == list:
+        header = headers[0]
+    else: # A single header was passed
+        header = headers
+
+    # Get the Subject location
+    try:
+        for n in range(len(header)):
+            if header[n]['name'] == 'Subject':
+                ix = n
+    except:
+        print ("gmail_api.get_subjects() >>> Error: can't get subject ix.")
+
+    # Extract the subject
+    try:
+        return [h[ix]['value'] for h in headers]
+    except:
+        print ("gmail_api.get_subjects() >>> Error - Can't get the subject.")
+################################################################################
+def get_received_date (message):
+    """
+    Gets the date from the headers and returns it in yyyy-mm-dd format.
+    
+    Arguments:
+        - a message.
+    Returns:
+        - a string with the date in yyyy-mm-dd format.
+    """
+    # Dictionary for translating months names to numbers
+    month = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,\
+             'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+    
+    header_ = get_headers (message)
+    date_ = header_[0][1]['value'].split(';')[1]
+    date_ = date_.split()
+    
+    y = int (date_[3])
+    m = int (month[date_[2]])
+    d = int (date_[1])
+    
+#    return y + '-' + m + '-' + d
+    return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
+################################################################################
+def is_unread (msg):
+    """
+    Checks if a message is UNREAD.
+    
+    Arguments:
+        - a message
+    Returns:
+        - a boolean (True for UNREAD message)
+    """
+    return 'UNREAD' in get_labels(msg)
+################################################################################
+def mark_as_read (service, msg_ids):
+    """
+    Marks as read a list of messages.
+    
+    Arguments:
+        - A service
+        - A single or list of ids dicts, as in a gmail message
+    Returns:
+        - Nothing
+    """
+    def markRead (msgId):
+        service.users().messages().modify(userId='me',\
+                                          id=msgId['id'],\
+                                          body={'removeLabelIds': ['UNREAD'],\
+                                                'addLabelIds': []\
+                                               })\
+                                  .execute()
+    #--------------------------
+    if type(msg_ids) == list:
+        for msg_id in msg_ids:
+            markRead(msg_id)
+    elif type(msg_ids) == dict:
+        markRead (msg_ids)
+################################################################################
+#def add_labels (service, msg_id, labels):
+#    """
+#    Arguments:
+#        - A service
+#        - A message id (not a dict)
+#        - A list of labels to add
+#    Returns:
+#        - None
+#    """
+#    service.users().messages().modify(userId='me',\
+#                                      id=msg_id,\
+#                                      body={'removeLabelIds': [],\
+#                                            'addLabelIds': labels\
+#                                           })\
+#                              .execute()
+################################################################################
+#def remove_labels (service, msg_id, labels):
+#    """
+#        Arguments:
+#        - A service
+#        - A message id (not a dict)
+#        - A list of labels to remove
+#    Returns:
+#        - None
+#    """  
+#    service.users().messages().modify(userId='me',\
+#                                  id=msg_id,\
+#                                  body={'removeLabelIds': labels,\
+#                                        'addLabelIds': []\
+#                                       })\
+#                              .execute() 
+################################################################################
+def modify_labels (service, msg_id, add=[], remove=[]):
+    """
+    Adds or removes labels from a message.
+    
+    Arguments:
+        - A service
+        - A message id (dict)
+        - A list of labels to add
+        - A list of labels to remove
+    Returns:
+        - None
+    """
+    service.users().messages().modify (userId='me', id=msg_id, \
+                                       body = {'addLabelIds': add,\
+                                               'removeLabelIds': remove })\
+                              .execute()
+################################################################################
+def get_list_of_labels (service, print_=False):
+    """
+    
+    """
+    # Get the list of available labels
+    labels = service.users().labels().list(userId='me').execute()
+    # Extract the 'labels' field from the dict
+    labels = labels['labels']
+    
+    if print_:
+        print ('\nLABELS:\n')
+        for label in labels:
+            print (label['id'] + ' --> ' + label['name'])
+    
+    return labels
+################################################################################
+def revoke_auth ():
+    """
+    Deletes the authorization json file in ~/.credentials.
+    """
+    tools.client.os.remove('/home/david/.credentials/gmail_api-python.json')
+################################################################################
+################################################################################
 ################################################################################
 
-################################################################################
 
-################################################################################
 
 ################################################################################
 def main():
