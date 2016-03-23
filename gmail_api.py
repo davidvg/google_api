@@ -17,6 +17,9 @@ from apiclient.http import BatchHttpRequest as batchRequest
 import oauth2client
 from oauth2client import client
 from oauth2client import tools
+# Modules for reencoding the message
+import base64
+import email
 
 # Modules for reencoding the message
 import base64
@@ -174,10 +177,14 @@ def get_message (service, msg_id, format='minimal'):
         - a service, created using make_service()
         - a message id, as returned by messages.list() in the api
 <<<<<<< HEAD
+<<<<<<< HEAD
         - a message format (full, raw, minimal)
 =======
         - a message format (full, raw, minimal, metadata)
 >>>>>>> develop
+=======
+        - a message format (full, raw, minimal, metadata)
+>>>>>>> 486df111026729119c790d4aa9b14d8b5c7a7373
     
     Returns:
         - a message
@@ -430,6 +437,98 @@ def get_received_date (message):
 #    return y + '-' + m + '-' + d
     return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
 ################################################################################
+def decode (message):
+    """
+    
+    """
+    try:
+        return decode_message (message)
+    except:
+        return decode_message_multipart (message)
+################################################################################
+def get_headers (messages):
+    """
+    Returns the message headers.
+    Won't work for message format 'raw' or 'minimal'
+    
+    Arguments:
+        - a list of messages, as returned by get_batch_messages()
+    
+    Returns:
+        - a list with the headers for the input messages
+    """
+    if type(messages) == list: # a list of messages was passed
+        try:
+            # Extract the payloads
+            payloads = [msg['payload'] for msg in messages]
+            # Extract and return the headers
+            return [pl['headers'] for pl in payloads]
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+            return
+    else: # a single message was passed
+        try:
+            payload = messages['payload']
+            return [payload['headers']] # Return list for consistency
+        except:
+            # There are no headers in the messages
+            print ('>>> Error! No headers in the messages.')
+            print (">>> Messages must be in 'full' or 'metadata' formats.")
+################################################################################
+def get_subjects (headers):
+    """
+    Arguments:
+        - a list of headers (or a single header)
+    
+    Returns:
+        - a list with the subjects for every message    
+    """
+    # Deal with single / multiple headers passed as input
+    if type(headers[0]) == list:
+        header = headers[0]
+    else: # A single header was passed
+        header = headers
+
+    # Get the Subject location
+    try:
+        for n in range(len(header)):
+            if header[n]['name'] == 'Subject':
+                ix = n
+    except:
+        print ("gmail_api.get_subjects() >>> Error: can't get subject ix.")
+
+    # Extract the subject
+    try:
+        return [h[ix]['value'] for h in headers]
+    except:
+        print ("gmail_api.get_subjects() >>> Error - Can't get the subject.")
+################################################################################
+def get_received_date (message):
+    """
+    Gets the date from the headers and returns it in yyyy-mm-dd format.
+    
+    Arguments:
+        - a message.
+    Returns:
+        - a string with the date in yyyy-mm-dd format.
+    """
+    # Dictionary for translating months names to numbers
+    month = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,\
+             'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+    
+    header_ = get_headers (message)
+    date_ = header_[0][1]['value'].split(';')[1]
+    date_ = date_.split()
+    
+    y = int (date_[3])
+    m = int (month[date_[2]])
+    d = int (date_[1])
+    
+#    return y + '-' + m + '-' + d
+    return '{0:4d}-{1:02d}-{2:02d}'.format(y, m, d)
+################################################################################
 def is_unread (msg):
     """
     Checks if a message is UNREAD.
@@ -541,6 +640,8 @@ def revoke_auth ():
 
 
 
+
+################################################################################
 ################################################################################
 def main():
     """
