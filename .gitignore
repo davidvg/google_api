@@ -9,3 +9,5 @@ client_secret.json
 /tests/**
 gmailTest.py
 
+# Vim's backup file
+*swp
