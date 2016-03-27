@@ -29,12 +29,12 @@ except ImportError:
 
 # Default values
 #SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
-#SCOPES ) 'https://www.googleapis.com/auth/gmail.modify'
+#SCOPES = 'https://www.googleapis.com/auth/gmail.modify'
 CLIENT_SECRET_FILE = 'client_secret.json'
 #APPLICATION_NAME = 'Gmail API for Python'
 
 ################################################################################
-def get_credentials(scope):
+def get_credentials(scope='https://www.googleapis.com/auth/gmail.modify'):
     """Gets valid user credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
