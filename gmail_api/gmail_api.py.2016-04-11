@@ -30,7 +30,7 @@ except ImportError:
 # Default values
 #SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
 #SCOPES = 'https://www.googleapis.com/auth/gmail.modify'
-CLIENT_SECRET_FILE = 'client_secret.json'
+CLIENT_SECRET_FILE = '../client_secret.json'
 #APPLICATION_NAME = 'Gmail API for Python'
 
 ################################################################################
@@ -535,17 +535,14 @@ def revoke_auth ():
 ################################################################################
 
 
-
-################################################################################
-################################################################################
-################################################################################
 def main():
     """
     Example of the gmail_api module.
     Requires a 'client_secret.json' file (see header of this file)
     """
     pass
-################################################################################
+
+
 if __name__ == '__main__':
     main()
 
