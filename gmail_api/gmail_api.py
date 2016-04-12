@@ -192,9 +192,6 @@ def main():
     msg_ids = client.msg_ids[0:3]
     messages = client.get_batch_messages(msg_ids)
 
-
-
-
     
 if __name__ == '__main__':
     main()
