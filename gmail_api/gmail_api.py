@@ -44,7 +44,7 @@ class GmailClient(object):
         
         self.init()     # Initialize credentials and service
 
-    def get_credentials(self):
+    def _get_credentials(self):
         """
         Gets valid user credentials from storage.
 
@@ -76,7 +76,7 @@ class GmailClient(object):
             print('Storing credentials to ' + credential_path)
         self._credentials = credentials
 
-    def make_service(self):
+    def _make_service(self):
         """
         Generates a service.
 
@@ -92,8 +92,8 @@ class GmailClient(object):
         """
 
         """
-        self.get_credentials()
-        self.make_service()
+        self._get_credentials()
+        self._make_service()
 
     def get_message_ids_from_labels(self, labels):
         """
@@ -110,24 +110,89 @@ class GmailClient(object):
         while 'nextPageToken' in response:
             page_token = response['nextPageToken']
             response = self.service.users().messages().list(
-                                                            userId='me',
-                                                            labelIds=labels,
-                                                            pageToken=page_token
-                                                           ).execute()
+               userId='me',
+               labelIds=labels,
+               pageToken=page_token
+               ).execute()
             self.msg_ids.extend(response['messages'])
 
+    def get_message_ids_from_query(self, query):
+        """
 
+        """
+        response = self.service.users().messages().list(
+                        userId='me',
+                        q=query
+                        ).execute()
+        # First page of message results
+        if 'messages' in response:
+            self.msg_ids.extend(response['messages'])
+        # Check if there are more pages
+        while 'nextPageToken' in response:
+            page_token = response['nextPageToken']
+            response = self.service.users().messages().list(
+                            userId='me',
+                            q=query,
+                            pageToken=page_token
+                            ).execute()
+            self.msg_ids.extend(response['messages'])
+    
+    def get_message(self, msg_id, format='full'):
+        """
 
+        """
+        message = self.service.users().messages().get(
+                       userId='me',
+                       id=msg_id['id'],
+                       format=format
+                       ).execute()
+        return message
 
+    def get_batch_messages(self, msg_ids, format_='full'):
+        """
+
+        """
+        messages = []
+        # Callback for the requests; just appends the message to the list
+        def callback_(req_id, resp, exception):
+            if exception:
+                print('  >>> CallbackException')
+                pass
+            else:
+                messages.append(resp)
+        # As the callback is the same for all requests, it can be defined
+        #   in the batch request definition. If there were different callbacks,
+        #   each one could be defined as a second argument in batch.arg():
+        #     batch.arg(request, callback)
+        def batch_request():
+            batch = self.service.new_batch_http_request(callback_)
+            ids = [elem['id'] for elem in msg_ids]
+            for id_ in ids:
+                batch.add(self.service.users().messages().get(
+                    userId='me',
+                    id=id_,
+                    format=format_
+                    )
+                )
+            batch.execute()
+        if len(self.msg_ids) < 1000:
+            batch_request()
+        else:   # To Do: implement the case for +1000 messages
+            pass
+        return messages
 
 
 
 def main():
-    test = GmailClient()
+    client = GmailClient()
     labels = ['Label_53']
 
-    test.get_message_ids_from_labels(labels)
-    print (test.msg_ids)
+    client.get_message_ids_from_labels(labels)
+
+    msg_ids = client.msg_ids[0:3]
+    messages = client.get_batch_messages(msg_ids)
+
+
 
 
     
