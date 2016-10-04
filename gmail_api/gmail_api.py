@@ -92,11 +92,28 @@ class Client(object):
                     ).execute()
             self.msgIds.extend(response['messages'])
 
+    def get_msg_ids_from_query(self, query):
+        response = self.service.users().messages().list(userId='me',
+                                                        q=query,
+                                                        ).execute()
+        # First page of results
+        if 'messages' in response:
+            self.msgIds.extend(response['messages'])
+        # Check if there are more result pages
+        while 'nextPageToken' in response:
+            page_token = response['nextPageToken']
+            response = self.service.users().messages().list(
+                    userId='me',
+                    q=query,
+                    pageToken = page_token
+                    ).execute()
+            self.msgIds.extend(response['messages'])
+
 
 def main():
     pass
 
 if __name__ == '__main__':
     gm = Client()
-    gm.get_msg_ids_from_labels('UNREAD')
-    print('Number of downloader ids: %d' % len(gm.msgIds))
+    gm.get_msg_ids_from_query('Udacity')
+    print('Number of downloaded message ids: %d' % len(gm.msgIds))
