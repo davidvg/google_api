@@ -46,6 +46,7 @@ class Client(object):
         self.secret_ = secret_
         self.credentials_ = self.get_credentials()
         self.service = self.make_service()
+        self.msgIds = []
 
     def get_credentials(self):
         home_dir = os.path.expanduser('~')
@@ -70,3 +71,32 @@ class Client(object):
     def make_service(self):
         http = self.credentials_.authorize(httplib2.Http())
         return discovery.build('gmail', 'v1', http=http)
+
+    def get_msg_ids_from_labels(self, labels):
+        '''
+        
+        '''
+        response = self.service.users().messages().list(userId='me',
+                                                        labelIds=labels
+                                                        ).execute()
+        # First page of results
+        if 'messages' in response:
+            self.msgIds.extend(response['messages'])
+        # Check if there are more result pages
+        while 'nextPageToken' in response:
+            page_token = response['nextPageToken']
+            response = self.service.users().messages().list(
+                    userId='me',
+                    labelIds=labels,
+                    pageToken = page_token
+                    ).execute()
+            self.msgIds.extend(response['messages'])
+
+
+def main():
+    pass
+
+if __name__ == '__main__':
+    gm = Client()
+    gm.get_msg_ids_from_labels('UNREAD')
+    print('Number of downloader ids: %d' % len(gm.msgIds))
