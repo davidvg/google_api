@@ -13,18 +13,13 @@ setup(
     version='0.1',
     description='Basic implementation of some of the Google APIs.',
     long_description=long_description,
-
     url='https://github.com/davidvg/google_api',
-
     author='David Vazquez Garcia',
     author_email='davidvazquez.gijon@gmail.com',
-
     license='MIT',
-
     classifiers=[
         # List of classifiers:
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        
         # *** Development status
         #'Development Status :: 1 - Planning'
         'Development Status :: 2 - Pre-Alpha',
@@ -33,14 +28,11 @@ setup(
         #'Development Status :: 5 - Production/Stable',
         #'Development Status :: 6 - Mature',
         #'Development Status :: 7 - Inactive',
-        
         'License :: OSI Approved :: MIT License',
-
         # *** Intended Audience
         'Intended Audience :: Developers',
         # *** Topic
         'Topic :: Software Development :: Build Tools',
-
         'Operating System :: OS Independent',
         'Environment :: Console',
         'Programming Language :: Python',
@@ -51,8 +43,8 @@ setup(
     
     keywords='api google gmail',
 
-    packages=['gmail_api'],
-    #packages=find_packages(exclude=[]),
+    #packages=[],
+    packages=find_packages(exclude=[]),
 
     install_requires=['httplib2', 'oauthclient', 'apiclient', 'email'],
 
