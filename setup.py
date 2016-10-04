@@ -36,9 +36,8 @@ setup(
         'Operating System :: OS Independent',
         'Environment :: Console',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
+        #'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
     ],
     
     keywords='api google gmail',
@@ -46,7 +45,7 @@ setup(
     #packages=[],
     packages=find_packages(exclude=[]),
 
-    install_requires=['httplib2', 'oauthclient', 'apiclient', 'email'],
+    install_requires=['httplib2', 'oauth2client', 'email'],#, 'apiclient'],
 
     platforms='any',
 
@@ -56,8 +55,6 @@ setup(
 
     entry_points={
         'console_scripts': [
-            # main() function called in __init__.py
-            #'gmail_api=gmail_api:main',
         ],
     },
 )
