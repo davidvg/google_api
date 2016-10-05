@@ -47,7 +47,7 @@ class Client(object):
         self.__secret = secret_
         self.service = None
         # Members
-        self.msgIds = []
+        self.msg_ids = []
 
         # Path for storing credentials
         home_dir = os.path.expanduser('~')
@@ -79,7 +79,7 @@ class Client(object):
                                                         ).execute()
         # First page of results
         if 'messages' in response:
-            self.msgIds.extend(response['messages'])
+            self.msg_ids.extend(response['messages'])
         # Check if there are more result pages
         while 'nextPageToken' in response:
             page_token = response['nextPageToken']
@@ -88,7 +88,7 @@ class Client(object):
                     labelIds=labels,
                     pageToken = page_token
                     ).execute()
-            self.msgIds.extend(response['messages'])
+            self.msg_ids.extend(response['messages'])
 
     def get_msg_ids_from_query(self, query):
         response = self.service.users().messages().list(userId='me',
@@ -96,7 +96,7 @@ class Client(object):
                                                         ).execute()
         # First page of results
         if 'messages' in response:
-            self.msgIds.extend(response['messages'])
+            self.msg_ids.extend(response['messages'])
         # Check if there are more result pages
         while 'nextPageToken' in response:
             page_token = response['nextPageToken']
@@ -105,8 +105,51 @@ class Client(object):
                     q=query,
                     pageToken = page_token
                     ).execute()
-            self.msgIds.extend(response['messages'])
+            self.msg_ids.extend(response['messages'])
 
+    def get_message(self, id_, format_='full'):
+        # Check type of id_ argument
+        if isinstance(id_, str):
+            print('str')
+        elif isinstance(id_, list):
+            print('list')
+        elif isinstance(id_, dict):
+            print('dict')
+
+    def get_batch_messages(self, msg_ids_, format_='full'):
+        '''
+        Download a group of messages, given its ids.
+
+        Arguments:
+            - msg_ids_: a list of message ids as returned by the API.
+            - format_: the format for the downloaded message: 'full', 'raw'
+
+        Returns:
+            - A list with the messages.
+        '''
+        messages = []
+        def callback_(req_id, resp, exception):
+            if exception:
+                print('  >>> CallbackException')
+                pass
+            else:
+                messages.append(resp)
+            
+        def batch_request():
+            batch = self.service.new_batch_http_request(callback_)
+            ids_ = [elem['id'] for elem in msg_ids_]
+            for id_ in ids_:
+                batch.add(self.service.users().messages().get(userId='me',
+                                                              id=id_,
+                                                              format=format_
+                                                              ))
+            batch.execute()
+        if len(self.msg_ids) < 1000:
+            batch_request()
+        else:
+            # To Do: implement the case for 1000+ messages
+            pass
+        return messages
 
 def main():
     pass
@@ -114,4 +157,5 @@ def main():
 if __name__ == '__main__':
     gm = Client()
     gm.get_msg_ids_from_query('Udacity')
-    print('Number of downloaded message ids: %d' % len(gm.msgIds))
+    print('Number of downloaded message ids: %d' % len(gm.msg_ids))
+    m = gm.get_batch_messages(gm.msg_ids)
