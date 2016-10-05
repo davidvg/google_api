@@ -107,15 +107,6 @@ class Client(object):
                     ).execute()
             self.msg_ids.extend(response['messages'])
 
-    def get_message(self, id_, format_='full'):
-        # Check type of id_ argument
-        if isinstance(id_, str):
-            print('str')
-        elif isinstance(id_, list):
-            print('list')
-        elif isinstance(id_, dict):
-            print('dict')
-
     def get_batch_messages(self, msg_ids_, format_='full'):
         '''
         Download a group of messages, given its ids.
@@ -151,11 +142,38 @@ class Client(object):
             pass
         return messages
 
+    def get_message(self, id_, format_='full'):
+        # Check type of id_ argument
+        if isinstance(id_, str):
+            print('str')
+        elif isinstance(id_, list):
+            print('list')
+            try:
+                assert(len(id_) == 1)
+            except AssertionError:
+                print('    >>> ERROR: more than 1 message id passed.')
+            else:
+                pass
+        elif isinstance(id_, dict):
+            print('dict')
+
+    def get_messages(self, labels=None, query=None, format_='full'):
+        # Get the id for messages corresponding to labels/query
+        if labels:
+            self.get_msg_ids_from_labels(labels=labels)
+        elif query:
+            self.get_msg_ids_from_query(query=query)
+        else:
+            print('    >>> get_messages(): No labels or query passed. Nothing is done.')
+        # Download the messages
+        msgs = self.get_batch_messages(self.msg_ids, format_=format_)
+        return msgs
+
 def main():
     pass
 
 if __name__ == '__main__':
     gm = Client()
-    gm.get_msg_ids_from_query('Udacity')
-    print('Number of downloaded message ids: %d' % len(gm.msg_ids))
-    m = gm.get_batch_messages(gm.msg_ids)
+    #gm.get_messages(labels='UNREAD')
+    m = gm.get_messages(query='Udacity')
+    print(len(m))
