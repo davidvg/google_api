@@ -70,10 +70,15 @@ class Client(object):
         http = credentials.authorize(httplib2.Http())
         self.service = discovery.build('gmail', 'v1', http=http)
 
+    def __get_id(self):
+        pass
+
     def get_msg_ids_from_labels(self, labels):
         '''
         
         '''
+        # Clear previous msg_ids
+        self.msg_ids = []
         response = self.service.users().messages().list(userId='me',
                                                         labelIds=labels
                                                         ).execute()
@@ -91,6 +96,8 @@ class Client(object):
             self.msg_ids.extend(response['messages'])
 
     def get_msg_ids_from_query(self, query):
+        # Clear previous msg_ids
+        self.msg_ids = []
         response = self.service.users().messages().list(userId='me',
                                                         q=query,
                                                         ).execute()
@@ -107,13 +114,14 @@ class Client(object):
                     ).execute()
             self.msg_ids.extend(response['messages'])
 
-    def get_batch_messages(self, msg_ids_, format_='full'):
+    def get_batch_messages(self, msg_ids, format='full'):
         '''
         Download a group of messages, given its ids.
 
         Arguments:
-            - msg_ids_: a list of message ids as returned by the API.
-            - format_: the format for the downloaded message: 'full', 'raw'
+            - msg_ids: a list of message ids as returned by the API.
+            - format:  the format for the downloaded message: 'full', 'raw',
+                        'metadata', 'minimal'
 
         Returns:
             - A list with the messages.
@@ -128,11 +136,11 @@ class Client(object):
             
         def batch_request():
             batch = self.service.new_batch_http_request(callback_)
-            ids_ = [elem['id'] for elem in msg_ids_]
+            ids_ = [elem['id'] for elem in msg_ids]
             for id_ in ids_:
                 batch.add(self.service.users().messages().get(userId='me',
                                                               id=id_,
-                                                              format=format_
+                                                              format=format
                                                               ))
             batch.execute()
         if len(self.msg_ids) < 1000:
@@ -142,22 +150,22 @@ class Client(object):
             pass
         return messages
 
-    def get_message(self, id_, format_='full'):
-        # Check type of id_ argument
-        if isinstance(id_, str):
+    def get_message(self, msg_id, format='full'):
+        # Check type of msg_id argument
+        if isinstance(msg_id, str):
             print('str')
-        elif isinstance(id_, list):
+        elif isinstance(msg_id, list):
             print('list')
             try:
-                assert(len(id_) == 1)
+                assert(len(msg_id) == 1)
             except AssertionError:
                 print('    >>> ERROR: more than 1 message id passed.')
             else:
                 pass
-        elif isinstance(id_, dict):
+        elif isinstance(msg_id, dict):
             print('dict')
 
-    def get_messages(self, labels=None, query=None, format_='full'):
+    def get_messages(self, labels=None, query=None, format='full'):
         # Get the id for messages corresponding to labels/query
         if labels:
             self.get_msg_ids_from_labels(labels=labels)
@@ -166,8 +174,69 @@ class Client(object):
         else:
             print('    >>> get_messages(): No labels or query passed. Nothing is done.')
         # Download the messages
-        msgs = self.get_batch_messages(self.msg_ids, format_=format_)
+        msgs = self.get_batch_messages(self.msg_ids, format=format)
         return msgs
+
+    ### Parsing and decoding the messages
+    '''
+    Message structure for the different formats
+
+    * Full
+      ----
+        - snippet
+        - internalDate
+        - payload
+            - filename
+            - headers: list of 26 dicts with keys {'name', 'value'}
+                - Received: date (multiple occurences ?)
+                - MIME-Version
+                - Content-Type: text/html, charset
+                - From
+                - Subject
+                - ...
+            - mimeType: text/html, ...
+            - partId
+            - body: dict
+                - data: base64
+                - size: int
+        - sizeEstimate
+        - historyId
+        - labelIds: list of labels
+        - threadId
+
+    * Raw
+      ---
+        - threadId
+        - snippet
+        - historyId
+        - internalDate
+        - id
+        - raw: base64
+        - labelIds
+        - sizeEstimate
+
+    * Metadata: dict with 8 dicts
+      --------
+        - threadId
+        - snippet
+        - historyId
+        - inernalDate
+        - id
+        - labelIds
+        - payload: dict
+            - mimeType: text/html, ...
+            - headers
+        - sizeEstimate
+
+    * Minimal
+      -------
+        - historyId
+        - id
+        - labelIds
+        - sizeEstimate
+        - snippet
+        - threadId
+    '''
 
 def main():
     pass
