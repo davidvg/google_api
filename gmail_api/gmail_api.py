@@ -48,6 +48,8 @@ class Client(object):
         self.service = None
         # Members
         self.msg_ids = []
+        self.messages = []
+        self.__format = None
 
         # Path for storing credentials
         home_dir = os.path.expanduser('~')
@@ -126,6 +128,8 @@ class Client(object):
         Returns:
             - A list with the messages.
         '''
+        # Store current format
+        self.__format__ = format
         messages = []
         def callback_(req_id, resp, exception):
             if exception:
@@ -148,9 +152,11 @@ class Client(object):
         else:
             # To Do: implement the case for 1000+ messages
             pass
-        return messages
+        self.messages = messages
 
     def get_message(self, msg_id, format='full'):
+        # Store current format
+        self.__format__ = format
         # Check type of msg_id argument
         if isinstance(msg_id, str):
             print('str')
@@ -166,6 +172,8 @@ class Client(object):
             print('dict')
 
     def get_messages(self, labels=None, query=None, format='full'):
+        # Store current format
+        self.__format__ = format
         # Get the id for messages corresponding to labels/query
         if labels:
             self.get_msg_ids_from_labels(labels=labels)
@@ -174,8 +182,7 @@ class Client(object):
         else:
             print('    >>> get_messages(): No labels or query passed. Nothing is done.')
         # Download the messages
-        msgs = self.get_batch_messages(self.msg_ids, format=format)
-        return msgs
+        self.get_batch_messages(self.msg_ids, format=format)
 
     ### Parsing and decoding the messages
     '''
@@ -244,5 +251,5 @@ def main():
 if __name__ == '__main__':
     gm = Client()
     #gm.get_messages(labels='UNREAD')
-    m = gm.get_messages(query='Udacity')
-    print(len(m))
+    gm.get_messages(query='Udacity')
+    print(len(gm.messages))
