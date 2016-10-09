@@ -195,6 +195,7 @@ class Client(object):
       ----
         - snippet
         - internalDate
+        - id
         - payload
             - filename
             - headers: list of 26 dicts with keys {'name', 'value'}
@@ -205,7 +206,7 @@ class Client(object):
                 - Subject
                 - ...
             - mimeType: text/html, ...
-            - partId
+            - parts
             - body: dict
                 - data: base64
                 - size: int
@@ -248,15 +249,21 @@ class Client(object):
         - threadId
     '''
 
+    def get_id(self, message):
+        '''
+        Returns the message id for a single raw message.
+        '''
+        return message['id']
+
     def get_labels(self, message):
         '''
-        Returns a list of labels for a single message.
+        Returns a list of labels for a single raw message.
         '''
         return message['labelIds']
 
     def get_date(self, message, out='datetime'):
         '''
-        Returns the reception date for a single message.
+        Returns the reception date for a single raw message.
         The output format can be 'datetime', 'seconds' or 'struct'
         '''
         internal = float(message['internalDate'])/1000.   # seconds from Epoch
@@ -266,9 +273,12 @@ class Client(object):
         if out == 'struct':
             return date
         elif out == 'datetime':
-            return dt.date(year=date.tm_year,
-                           month=date.tm_mon,
-                           day=date.tm_mday)
+            return dt.datetime(year=date.tm_year,
+                               month=date.tm_mon,
+                               day=date.tm_mday,
+                               hour= date.tm_hour,
+                               minute=date.tm_min,
+                               second=date.tm_sec)
 
 
     def decode_messages(self):
