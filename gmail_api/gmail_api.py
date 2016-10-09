@@ -19,6 +19,8 @@ import httplib2
 import os
 import base64
 import email
+import time
+import datetime as dt
 
 from googleapiclient import discovery
 from googleapiclient.http import BatchHttpRequest as batchRequest
@@ -48,6 +50,7 @@ class Client(object):
         self.service = None
         # Members
         self.msg_ids = []
+        self.raw_messages = []
         self.messages = []
         self.__format = None
 
@@ -152,7 +155,7 @@ class Client(object):
         else:
             # To Do: implement the case for 1000+ messages
             pass
-        self.messages = messages
+        self.raw_messages = messages
 
     def get_message(self, msg_id, format='full'):
         # Store current format
@@ -245,11 +248,46 @@ class Client(object):
         - threadId
     '''
 
+    def get_labels(self, message):
+        '''
+        Returns a list of labels for a single message.
+        '''
+        return message['labelIds']
+
+    def get_date(self, message, out='datetime'):
+        '''
+        Returns the reception date for a single message.
+        The output format can be 'datetime', 'seconds' or 'struct'
+        '''
+        internal = float(message['internalDate'])/1000.   # seconds from Epoch
+        if out == 'seconds':
+            return internal
+        date = time.gmtime(internal)
+        if out == 'struct':
+            return date
+        elif out == 'datetime':
+            return dt.date(year=date.tm_year,
+                           month=date.tm_mon,
+                           day=date.tm_mday)
+
+
+    def decode_messages(self):
+        '''
+        For 'full' and 'raw' formats; 'minimal' and 'metadata' have no message
+        body.
+
+        Takes messages stored in Client.raw_messages and extracts info from them.
+        The result is stored in Client.messages
+        '''
+        for msg in self.raw_messages[0]:
+            decoded = dict()
+            print(self.__format__)
+
 def main():
     pass
 
 if __name__ == '__main__':
     gm = Client()
     #gm.get_messages(labels='UNREAD')
-    gm.get_messages(query='Udacity')
-    print(len(gm.messages))
+    gm.get_messages(query='bonillaware')
+    m = gm.raw_messages[-14]
