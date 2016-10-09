@@ -253,7 +253,7 @@ class Client(object):
         '''
         Returns the message id for a single raw message.
         '''
-        return message['id']
+        return str(message['id'])
 
     def get_labels(self, message):
         '''
@@ -276,12 +276,11 @@ class Client(object):
             return dt.datetime(year=date.tm_year,
                                month=date.tm_mon,
                                day=date.tm_mday,
-                               hour= date.tm_hour,
+                               hour=date.tm_hour,
                                minute=date.tm_min,
                                second=date.tm_sec)
 
-
-    def decode_messages(self):
+    def decode_messages(self, keys=None):
         '''
         For 'full' and 'raw' formats; 'minimal' and 'metadata' have no message
         body.
@@ -289,9 +288,17 @@ class Client(object):
         Takes messages stored in Client.raw_messages and extracts info from them.
         The result is stored in Client.messages
         '''
-        for msg in self.raw_messages[0]:
-            decoded = dict()
-            print(self.__format__)
+        self.messages = []
+        if not keys:
+            keys = ['id', 'internalDate', 'snippet', 'labelIds']
+        for msg in self.raw_messages:
+            decoded = {}
+            decoded['id'] = self.get_id(msg)
+            decoded['date'] = self.get_date(msg)
+            decoded['labels'] = self.get_labels(msg)
+        
+
+            self.messages.append(decoded)
 
 def main():
     pass
@@ -300,4 +307,6 @@ if __name__ == '__main__':
     gm = Client()
     #gm.get_messages(labels='UNREAD')
     gm.get_messages(query='bonillaware')
-    m = gm.raw_messages[-14]
+    gm.decode_messages()
+    for msg in gm.messages:
+        print(msg)
