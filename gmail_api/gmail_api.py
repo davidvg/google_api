@@ -161,18 +161,17 @@ class Client(object):
         # Store current format
         self.__format__ = format
         # Check type of msg_id argument
-        if isinstance(msg_id, str):
-            print('str')
-        elif isinstance(msg_id, list):
-            print('list')
-            try:
-                assert(len(msg_id) == 1)
-            except AssertionError:
-                print('    >>> ERROR: more than 1 message id passed.')
-            else:
-                pass
-        elif isinstance(msg_id, dict):
-            print('dict')
+        if isinstance(msg_id, dict):
+            msg_id = msg_id['id']
+        elif isinstance(msg_id, str):
+            pass
+        else:
+            print('  >>> get_message(): No valid id for message.')
+            return None
+        res = self.service.users().messages().get(userId='me',
+                                                  id=msg_id,
+                                                  format=format).execute()
+        return res
 
     def get_messages(self, labels=None, query=None, format='full'):
         # Store current format
@@ -194,7 +193,7 @@ class Client(object):
     * Full
       ----
         - snippet
-        - internalDate
+        - internalDate: ms from Epoch
         - id
         - payload
             - filename
@@ -280,6 +279,22 @@ class Client(object):
                                minute=date.tm_min,
                                second=date.tm_sec)
 
+    def get_body(self, message):
+        if self.__format__ == 'full':
+            payload = message['payload']
+            if not 'parts' in payload:
+                raw = payload['body']['data']
+            else: 
+                ### CHECK THIS!!
+                raw = payload['parts'][0]['body']['data']
+            body = base64.urlsafe_b64decode(raw.encode('ASCII'))
+        elif self.__format__ == 'raw':
+            raw = message['raw']
+            raw = base64.urlsafe_b64decode(raw.encode('ASCII'))
+            mime = email.message_from_bytes(raw)
+            body = mime.get_payload(decode=True)
+        return body
+
     def decode_messages(self, keys=None):
         '''
         For 'full' and 'raw' formats; 'minimal' and 'metadata' have no message
@@ -296,9 +311,13 @@ class Client(object):
             decoded['id'] = self.get_id(msg)
             decoded['date'] = self.get_date(msg)
             decoded['labels'] = self.get_labels(msg)
+            decoded['body'] = self.get_body(msg)
         
 
             self.messages.append(decoded)
+
+            # Just keep the first iteration for debugging
+            break
 
 def main():
     pass
@@ -306,7 +325,14 @@ def main():
 if __name__ == '__main__':
     gm = Client()
     #gm.get_messages(labels='UNREAD')
-    gm.get_messages(query='bonillaware')
+    gm.get_messages(query='fotocasa', format='raw')
     gm.decode_messages()
-    for msg in gm.messages:
-        print(msg)
+    
+    rm = gm.raw_messages[0]
+    m = gm.messages[0]
+    print('%8s --> %s' % ('Format', gm.__format__))
+    for key in m:
+        print('%8s --> %r' % (key, m[key]))
+    print()
+
+    
