@@ -1,9 +1,0 @@
-[ ] Make init() function, with get_credentials() and make_service() [?]
-[ ] Remake response structure for 'full' format.
-[ ] Make response structure for 'metadata' format
-[ ] Create function for changing the SCOPE of the credentials, or define multiple credentials, with different access permissions (for deleting or marking as read, for instance)
-[X] Add arguments description in function headers.
-[X] Create function to extract a message's labels.
-[X] Create function that gets a list of messages using labelIds.
-[X] Create schema of the structure of the messages for every format
-
