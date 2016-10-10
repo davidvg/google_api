@@ -279,6 +279,10 @@ class Client(object):
                 body={'addLabelIds': add,
                       'removeLabelIds': remove}).execute()
 
+    def is_unread(self, message):
+        # Check if the message is already been decoded
+        return 'UNREAD' in message['labels']
+
     def mark_as_read(self, obj):
         id_ = self.__parse_id(obj)
         self.modify_labels(id_, remove=['UNREAD'])
@@ -339,7 +343,7 @@ class Client(object):
             self.messages.append(decoded)
 
             # Just keep the first iteration for debugging
-            break
+            #break
 
 def main():
     pass
