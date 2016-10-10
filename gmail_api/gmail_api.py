@@ -75,8 +75,23 @@ class Client(object):
         http = credentials.authorize(httplib2.Http())
         self.service = discovery.build('gmail', 'v1', http=http)
 
-    def __get_id(self):
-        pass
+    def __parse_id(self, id_):
+        '''
+        Parses an id when passed to a function, to make sure it works for
+        every method.
+        Seems redundant with Client.get_id() when called on a message.
+        '''
+        if isinstance(id_, dict):
+            return id_['id']
+        elif isinstance(id_, str):
+            return id_
+        else:
+            # Is it a message?
+            try:
+                id_ = id_['id']
+            except:
+                print('  >>>> __parse_id(): No valid message id.')
+                return None
 
     def get_msg_ids_from_labels(self, labels):
         '''
@@ -161,16 +176,10 @@ class Client(object):
         # Store current format
         self.__format__ = format
         # Check type of msg_id argument
-        if isinstance(msg_id, dict):
-            msg_id = msg_id['id']
-        elif isinstance(msg_id, str):
-            pass
-        else:
-            print('  >>> get_message(): No valid id for message.')
-            return None
-        res = self.service.users().messages().get(userId='me',
-                                                  id=msg_id,
-                                                  format=format).execute()
+        msg_id = self.__parse_id(msg_id)
+        # Get messages
+        res = self.service.users().messages().get(
+                userId='me', id=msg_id, format=format).execute()
         return res
 
     def get_messages(self, labels=None, query=None, format='full'):
@@ -247,7 +256,6 @@ class Client(object):
         - snippet
         - threadId
     '''
-
     def get_id(self, message):
         '''
         Returns the message id for a single raw message.
@@ -260,22 +268,20 @@ class Client(object):
         '''
         return message['labelIds']
 
-    def modify_labels(self, id=None, message=None, add=[], remove=[]):
-        '''
+    def modify_labels(self, obj, add=[], remove=[]):
+        """
         Adds or removes labels from a message.
-        '''
-        if id:
-            if isinstance(id, dict):
-                id_ = id['id']
-            elif isinstance(id, str):
-                id_ = id
-        elif message:
-            id_ = message['id']
+        """
+        id_ = self.__parse_id(obj)
         self.service.users().messages().modify(
                 userId='me',
                 id=id_,
                 body={'addLabelIds': add,
                       'removeLabelIds': remove}).execute()
+
+    def mark_as_read(self, obj):
+        id_ = self.__parse_id(obj)
+        self.modify_labels(id_, remove=['UNREAD'])
 
     def get_date(self, message, out='datetime'):
         '''
@@ -330,7 +336,6 @@ class Client(object):
             decoded['labels'] = self.get_labels(msg)
             decoded['body'] = self.get_body(msg)
         
-
             self.messages.append(decoded)
 
             # Just keep the first iteration for debugging
