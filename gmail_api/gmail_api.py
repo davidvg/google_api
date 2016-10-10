@@ -260,6 +260,23 @@ class Client(object):
         '''
         return message['labelIds']
 
+    def modify_labels(self, id=None, message=None, add=[], remove=[]):
+        '''
+        Adds or removes labels from a message.
+        '''
+        if id:
+            if isinstance(id, dict):
+                id_ = id['id']
+            elif isinstance(id, str):
+                id_ = id
+        elif message:
+            id_ = message['id']
+        self.service.users().messages().modify(
+                userId='me',
+                id=id_,
+                body={'addLabelIds': add,
+                      'removeLabelIds': remove}).execute()
+
     def get_date(self, message, out='datetime'):
         '''
         Returns the reception date for a single raw message.
@@ -325,7 +342,7 @@ def main():
 if __name__ == '__main__':
     gm = Client()
     #gm.get_messages(labels='UNREAD')
-    gm.get_messages(query='fotocasa', format='raw')
+    gm.get_messages(query='Udacity', format='full')
     gm.decode_messages()
     
     rm = gm.raw_messages[0]
