@@ -349,6 +349,7 @@ class Client(object):
                 decoded['subject'] = self.get_subject(msg)
                 decoded['headers'] = msg['payload']['headers']
             elif self.__format__ is 'raw':
+                decoded['body'] = self.get_body(msg)
                 pass
             elif self.__format__ is 'metadata':
                 # At the moment it returns the payload dictionary
@@ -371,7 +372,7 @@ if __name__ == '__main__':
     gm = Client()
     gm.get_msg_ids_from_labels('Label_53')
     ids = gm.msg_ids[:3]
-    gm.get_messages(msg_ids=ids, format='full')
+    gm.get_messages(msg_ids=ids, format='raw')
     gm.decode_messages()
     for key in gm.messages[0].keys():
         print('%10s -- %r\n' % (key, gm.messages[0][key]))
