@@ -26,12 +26,6 @@ from googleapiclient import discovery
 from googleapiclient.http import BatchHttpRequest as batchRequest
 from oauth2client import file, client, tools
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
-
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/gmail_api-python.json
 SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
@@ -349,6 +343,12 @@ def main():
     pass
 
 if __name__ == '__main__':
+    try:
+        import argparse
+        flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+    except ImportError:
+        flags = None
+
     gm = Client()
     #gm.get_messages(labels='UNREAD')
     gm.get_messages(query='Udacity', format='full')
@@ -360,5 +360,3 @@ if __name__ == '__main__':
     for key in m:
         print('%8s --> %r' % (key, m[key]))
     print()
-
-    
