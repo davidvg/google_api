@@ -175,11 +175,13 @@ class Client(object):
                                                   format=format).execute()
         return res
 
-    def get_messages(self, labels=None, query=None, format='full'):
+    def get_messages(self, msg_ids=None, labels=None, query=None, format='full'):
         # Store current format
         self.__format__ = format
         # Get the id for messages corresponding to labels/query
-        if labels:
+        if msg_ids:
+            self.msg_ids = msg_ids
+        elif labels:
             self.get_msg_ids_from_labels(labels=labels)
         elif query:
             self.get_msg_ids_from_query(query=query)
@@ -299,8 +301,15 @@ class Client(object):
                                minute=date.tm_min,
                                second=date.tm_sec)
 
+    def get_subject(self, message):
+        headers = message['payload']['headers']
+        for h in headers:
+            if h['name'] == 'Subject':
+                return h['value']
+        return None
+
     def get_body(self, message):
-        if self.__format__ == 'full':
+        if self.__format__ is 'full':
             payload = message['payload']
             if not 'parts' in payload:
                 raw = payload['body']['data']
@@ -308,7 +317,7 @@ class Client(object):
                 ### CHECK THIS!!
                 raw = payload['parts'][0]['body']['data']
             body = base64.urlsafe_b64decode(raw.encode('ASCII'))
-        elif self.__format__ == 'raw':
+        elif self.__format__ is 'raw':
             raw = message['raw']
             raw = base64.urlsafe_b64decode(raw.encode('ASCII'))
             mime = email.message_from_bytes(raw)
@@ -324,19 +333,30 @@ class Client(object):
         The result is stored in Client.messages
         '''
         self.messages = []
-        if not keys:
-            keys = ['id', 'internalDate', 'snippet', 'labelIds']
         for msg in self.raw_messages:
             decoded = {}
+            if not keys:
+                keys = ['id', 'date', 'snippet', 'body', 'labels', 'subject',
+                        'headers']
+            for key in keys:
+                decoded[key] = None
             decoded['id'] = self.get_id(msg)
             decoded['date'] = self.get_date(msg)
             decoded['labels'] = self.get_labels(msg)
-            decoded['body'] = self.get_body(msg)
-        
-            self.messages.append(decoded)
+            decoded['snippet'] = msg['snippet']
+            if self.__format__ is 'full':
+                decoded['body'] = self.get_body(msg)
+                decoded['subject'] = self.get_subject(msg)
+                decoded['headers'] = msg['payload']['headers']
+            elif self.__format__ is 'raw':
+                pass
+            elif self.__format__ is 'metadata':
+                # At the moment it returns the payload dictionary
+                decoded['headers'] = msg['payload']['headers']
+            elif self.__format__ is 'minimal':
+                pass
 
-            # Just keep the first iteration for debugging
-            #break
+            self.messages.append(decoded)
 
 def main():
     pass
@@ -349,13 +369,10 @@ if __name__ == '__main__':
         flags = None
 
     gm = Client()
-    #gm.get_messages(labels='UNREAD')
-    gm.get_messages(query='Udacity', format='full')
+    gm.get_msg_ids_from_labels('Label_53')
+    ids = gm.msg_ids[:3]
+    gm.get_messages(msg_ids=ids, format='full')
     gm.decode_messages()
-    
-    rm = gm.raw_messages[0]
-    m = gm.messages[0]
-    print('%8s --> %s' % ('Format', gm.__format__))
-    for key in m:
-        print('%8s --> %r' % (key, m[key]))
-    print()
+    for key in gm.messages[0].keys():
+        print('%10s -- %r\n' % (key, gm.messages[0][key]))
+
