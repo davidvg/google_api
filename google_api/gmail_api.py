@@ -16,7 +16,7 @@ Install packages:
 '''
 
 import httplib2
-import os
+import os.path
 import base64
 import email
 import time
@@ -136,7 +136,6 @@ class Client(object):
             - msg_ids: a list of message ids as returned by the API.
             - format:  the format for the downloaded message: 'full', 'raw',
                         'metadata', 'minimal'
-
         Returns:
             - A list with the messages.
         '''
@@ -156,8 +155,7 @@ class Client(object):
             for id_ in ids_:
                 batch.add(self.service.users().messages().get(userId='me',
                                                               id=id_,
-                                                              format=format
-                                                              ))
+                                                              format=format))
             batch.execute()
         if len(self.msg_ids) < 1000:
             batch_request()
@@ -172,8 +170,9 @@ class Client(object):
         # Check type of msg_id argument
         msg_id = self.__parse_id(msg_id)
         # Get messages
-        res = self.service.users().messages().get(
-                userId='me', id=msg_id, format=format).execute()
+        res = self.service.users().messages().get(userId='me',
+                                                  id=msg_id,
+                                                  format=format).execute()
         return res
 
     def get_messages(self, labels=None, query=None, format='full'):
