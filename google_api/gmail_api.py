@@ -359,6 +359,25 @@ class Client(object):
 
             self.messages.append(decoded)
 
+    def write(self, message, use='date', to='html'):
+        """
+        Write the body of the message to a file.
+        - use: which key use to generate name (currently only 'date')
+        - to: file extension
+        """
+        if use is 'date':
+            name = message[use].strftime("%Y%m%d-%H%M%S")
+        else:
+            pass
+        out = '%s.%s' % (name, to)
+        if self.__format__ is 'full' or self.__format__ is 'raw':
+            body = message['body'].decode('utf-8')
+            with open(out, 'w') as f:
+                f.write(body)
+        else:
+            print('  >>> Client.write(): no body to write (format = %s)' 
+                    % self.__format__)
+
 def main():
     pass
 
@@ -371,9 +390,9 @@ if __name__ == '__main__':
 
     gm = Client()
     gm.get_msg_ids_from_labels('Label_53')
-    ids = gm.msg_ids[:3]
+    ids = gm.msg_ids[:2]
     gm.get_messages(msg_ids=ids, format='raw')
     gm.decode_messages()
-    for key in gm.messages[0].keys():
-        print('%10s -- %r\n' % (key, gm.messages[0][key]))
 
+    m = gm.messages[0]
+    gm.write(m, to='txt')
