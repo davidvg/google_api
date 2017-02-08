@@ -282,24 +282,19 @@ class Client(object):
         id_ = self.__parse_id(obj)
         self.modify_labels(id_, remove=['UNREAD'])
 
-    def get_date(self, message, out='datetime'):
-        '''
-        Returns the reception date for a single raw message.
-        The output format can be 'datetime', 'seconds' or 'struct'
+    def get_date(self, message):
+        ''' Returns the reception date for a single raw message in a string
+        using strftime.
         '''
         internal = float(message['internalDate'])/1000.   # seconds from Epoch
-        if out == 'seconds':
-            return internal
         date = time.gmtime(internal)
-        if out == 'struct':
-            return date
-        elif out == 'datetime':
-            return dt.datetime(year=date.tm_year,
-                               month=date.tm_mon,
-                               day=date.tm_mday,
-                               hour=date.tm_hour,
-                               minute=date.tm_min,
-                               second=date.tm_sec)
+        res = dt.datetime(year=date.tm_year,
+                          month=date.tm_mon,
+                          day=date.tm_mday,
+                          hour=date.tm_hour,
+                          minute=date.tm_min,
+                          second=date.tm_sec)
+        return res.strftime('%Y-%m-%dT%H:%M:%S')
 
     def get_subject(self, message):
         headers = message['payload']['headers']
@@ -366,7 +361,7 @@ class Client(object):
         - to: file extension
         """
         if use is 'date':
-            name = message[use].strftime("%Y%m%d-%H%M%S")
+            name = message[use]
         else:
             pass
         out = '%s.%s' % (name, to)
