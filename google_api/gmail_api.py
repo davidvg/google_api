@@ -384,9 +384,9 @@ if __name__ == '__main__':
         flags = None
 
     gm = Client()
-    gm.get_msg_ids_from_labels('Label_53')
+    gm.get_msg_ids_from_labels('Label_59')
     ids = gm.msg_ids[:2]
-    gm.get_messages(msg_ids=ids, format='raw')
+    gm.get_messages(msg_ids=ids, format='full')
     gm.decode_messages()
 
     m = gm.messages[0]
